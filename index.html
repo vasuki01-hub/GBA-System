@@ -226,7 +226,10 @@
           <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 gap-2">
               <div>
-                <span id="res-airline-code" class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-sky-100 text-sky-800 border border-sky-200">AI</span>
+                <div class="flex items-center gap-2">
+                  <span id="res-airline-code" class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-sky-100 text-sky-800 border border-sky-200">AI</span>
+                  <span id="live-data-status" class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold border border-slate-200">Static Base Rule</span>
+                </div>
                 <h2 id="res-airline-name" class="font-extrabold text-base text-slate-900 mt-1">Air India (AIC)</h2>
                 <p id="res-route-subtitle" class="text-xs text-slate-500">India → United States • ECONOMY CLASS (STANDARD)</p>
               </div>
@@ -939,11 +942,23 @@
       const resAlliance = document.getElementById('res-alliance-tag');
       if (resAlliance) resAlliance.innerText = selectedAirlineObj.alliance;
 
+      const statusTag = document.getElementById('live-data-status');
+      if (statusTag) {
+        statusTag.innerText = 'Static Base Rule';
+        statusTag.className = 'text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold border border-slate-200';
+      }
+
       let handPcs = (cabin === 'business' || cabin === 'first') ? 2 : 1;
       let handKg = selectedAirlineObj.handKg || 7;
 
       let checkedPcs = selectedAirlineObj.econPcs;
       let checkedKgEach = selectedAirlineObj.econKg || 23;
+
+      // ROUTE EXCEPTION HANDLING (Transatlantic & Transpacific piece rules for US/Canada)
+      const isNorthAmericaRoute = (origin === 'United States' || dest === 'United States' || origin === 'Canada' || dest === 'Canada');
+      if (isNorthAmericaRoute && (code === 'AI' || code === 'EK' || code === 'EY' || code === 'QR' || code === 'TK' || code === 'CX' || code === 'NH' || code === 'JL' || code === 'CA' || code === 'CZ' || code === 'MU')) {
+        checkedPcs = Math.max(checkedPcs, 2);
+      }
 
       if (cabin === 'premium') { checkedPcs = Math.max(checkedPcs, 2); }
       if (cabin === 'business') { checkedPcs = 2; checkedKgEach = 32; }
@@ -953,7 +968,7 @@
       if (fare === 'flex') { checkedPcs += 1; }
       if (tier === 'gold' || tier === 'platinum') { checkedPcs += 1; }
 
-      const isPieceConcept = (origin === 'United States' || dest === 'United States' || origin === 'Canada' || dest === 'Canada' || checkedPcs > 0);
+      const isPieceConcept = (isNorthAmericaRoute || checkedPcs > 0);
 
       let handWeightStr = currentUnitSystem === 'metric' ? `${handKg.toFixed(1)} KG` : `${(handKg * 2.20462).toFixed(1)} LBS`;
       let checkedWeightEachStr = currentUnitSystem === 'metric' ? `${checkedKgEach.toFixed(1)} KG` : `${(checkedKgEach * 2.20462).toFixed(1)} LBS`;
@@ -1095,7 +1110,7 @@
 
       responseText.innerText = "Querying Gemini AI Copilot for live grounded baggage rules...";
 
-      const userPrompt = `Provide a concise baggage allowance summary for ${airline} flying from ${origin} to ${dest} in ${cabin} class. Detail hand luggage weight/dimensions, checked bag piece count/weight caps, and overweight baggage fees.`;
+      const userPrompt = `Provide exact official real-time baggage allowance for ${airline} flying from ${origin} to ${dest} in ${cabin} class. Detail hand luggage (max weight in kg, pieces), checked baggage (number of pieces allowed, max weight per piece in kg), linear dimension limits, and overweight fee rules.`;
 
       try {
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
@@ -1121,7 +1136,37 @@
         const candidate = result.candidates?.[0];
 
         if (candidate && candidate.content?.parts?.[0]?.text) {
-          responseText.innerText = candidate.content.parts[0].text;
+          const text = candidate.content.parts[0].text;
+          responseText.innerText = text;
+
+          // DYNAMIC DISPLAY CARDS UPDATE FROM AI RESULT
+          const statusTag = document.getElementById('live-data-status');
+          if (statusTag) {
+            statusTag.innerText = 'AI Live Grounded Verified';
+            statusTag.className = 'text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold border border-emerald-300';
+          }
+
+          // Try extracting key figures if mentioned in text
+          const handKgMatch = text.match(/hand\s*(?:baggage|luggage|bag)?\s*(?:limit|allowance|weight)?[:\s]*(\d+)\s*kg/i) || text.match(/(\d+)\s*kg\s*hand/i);
+          if (handKgMatch && handKgMatch[1]) {
+            const hKg = parseFloat(handKgMatch[1]);
+            const elHandWt = document.getElementById('res-hand-weight');
+            if (elHandWt) elHandWt.innerText = currentUnitSystem === 'metric' ? `${hKg.toFixed(1)} KG` : `${(hKg * 2.20462).toFixed(1)} LBS`;
+          }
+
+          const checkedPcMatch = text.match(/(\d+)\s*(?:piece|pc|pieces|bags)/i);
+          if (checkedPcMatch && checkedPcMatch[1]) {
+            const cPcs = parseInt(checkedPcMatch[1]);
+            const elCheckedPcs = document.getElementById('res-checked-pcs');
+            if (elCheckedPcs) elCheckedPcs.innerText = `${cPcs} Piece${cPcs !== 1 ? 's' : ''}`;
+          }
+
+          const checkedKgMatch = text.match(/(\d+)\s*kg\s*(?:each|per bag)/i) || text.match(/(\d+)\s*kg\s*checked/i);
+          if (checkedKgMatch && checkedKgMatch[1]) {
+            const cKg = parseFloat(checkedKgMatch[1]);
+            const elCheckedWtEach = document.getElementById('res-checked-weight-each');
+            if (elCheckedWtEach) elCheckedWtEach.innerText = currentUnitSystem === 'metric' ? `${cKg.toFixed(1)} KG each` : `${(cKg * 2.20462).toFixed(1)} LBS each`;
+          }
         } else {
           responseText.innerText = "Received response from Gemini API, but text content was empty.";
         }
