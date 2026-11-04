@@ -59,7 +59,7 @@
         <div>
           <h1 class="font-extrabold text-base tracking-tight text-slate-900 flex items-center gap-2">
             BaggageGuide AI
-            <span class="text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">v3.7 Stable</span>
+            <span class="text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">v3.8 Stable</span>
           </h1>
           <p class="text-[11px] text-slate-500 font-medium hidden sm:block">Global Airline Allowance & Excess Fee Engine</p>
         </div>
@@ -132,7 +132,7 @@
         <button onclick="toggleApiKeyModal()" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <p class="text-xs text-slate-600 mb-4">
-        Enter your Google Gemini API key to enable real-time grounded allowance searches and AI assistant queries. The key is saved locally in your browser session.
+        Enter your Google Gemini API key starting with <strong>AIzaSy...</strong> to enable real-time grounded allowance searches.
       </p>
       <input type="password" id="user-gemini-key" placeholder="AIzaSy..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono mb-4 focus:ring-2 focus:ring-sky-500 focus:outline-none">
       <div class="flex justify-end space-x-2">
@@ -214,7 +214,7 @@
 
           <!-- Action Buttons -->
           <div class="pt-2 space-y-2">
-            <button onclick="calculateBaggageAllowance()" class="w-full py-3 px-4 bg-gradient-to-r from-sky-500 to-indigo-600 hover:opacity-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center space-x-2 transition-all cursor-pointer">
+            <button onclick="seeBaggageDetails()" class="w-full py-3 px-4 bg-gradient-to-r from-sky-500 to-indigo-600 hover:opacity-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center space-x-2 transition-all cursor-pointer">
               <i class="fa-solid fa-magnifying-glass text-sm"></i>
               <span>See Baggage Details</span>
             </button>
@@ -955,6 +955,14 @@
       let handPcs = (cabin === 'business' || cabin === 'first') ? 2 : 1;
       let handKg = selectedAirlineObj.handKg || 7;
 
+      // CLASS-BASED CABIN WEIGHT CORRECTIONS
+      if (code === 'CA' || code === 'CZ' || code === 'MU') {
+        // Air China / China Southern / China Eastern: Economy = 5kg, Business/First = 8kg per bag (2 bags)
+        if (cabin === 'business' || cabin === 'first') handKg = 8;
+      } else if (cabin === 'business' || cabin === 'first') {
+        if (handKg < 10) handKg = Math.min(handKg + 3, 15);
+      }
+
       let checkedPcs = selectedAirlineObj.econPcs;
       let checkedKgEach = selectedAirlineObj.econKg || 23;
 
@@ -981,7 +989,7 @@
       let dimsStr = currentUnitSystem === 'metric' ? '55 × 40 × 20 cm' : '22 × 16 × 8 in';
 
       const elHandPcs = document.getElementById('res-hand-pcs');
-      if (elHandPcs) elHandPcs.innerText = `${handPcs} Hand Bag + 1 Personal Item`;
+      if (elHandPcs) elHandPcs.innerText = `${handPcs} Hand Bag${handPcs > 1 ? 's' : ''} + 1 Personal Item`;
 
       const elHandWt = document.getElementById('res-hand-weight');
       if (elHandWt) elHandWt.innerText = handWeightStr;
@@ -1018,6 +1026,17 @@
 
       const passChecked = document.getElementById('pass-checked-val');
       if (passChecked) passChecked.innerText = `${checkedPcs} PC × ${checkedWeightEachStr} (${totalCheckedWeightStr})`;
+    }
+
+    function seeBaggageDetails() {
+      calculateBaggageAllowance();
+      if (userApiKey && userApiKey.trim() !== "") {
+        askGeminiRealtimeAI();
+      }
+      const card = document.getElementById('res-airline-name');
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     }
 
     // DIRECTORY RENDERERS
@@ -1096,7 +1115,7 @@
       resDisplay.innerText = `$${totalFee.toFixed(2)} USD`;
     }
 
-    // GEMINI REAL-TIME AI COPILOT
+    // GEMINI REAL-TIME AI COPILOT WITH RETRY & FALLBACK
     async function askGeminiRealtimeAI() {
       const responseBox = document.getElementById('ai-response-box');
       const responseText = document.getElementById('ai-response-text');
@@ -1128,66 +1147,91 @@
 ### 4. Overweight & Excess Fees
 - Surcharge rates for extra pieces and excess weight.`;
 
-      try {
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+      const modelsToTry = ["gemini-2.5-flash", "gemini-3-flash-preview"];
+      let success = false;
+      let lastError = null;
 
-        const payload = {
-          contents: [{ parts: [{ text: userPrompt }] }]
-        };
+      for (const modelName of modelsToTry) {
+        if (success) break;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+        const payload = { contents: [{ parts: [{ text: userPrompt }] }] };
 
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        // Retry loop for rate limits (HTTP 429)
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const response = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
 
-        if (!response.ok) {
-          if (response.status === 403) {
-            throw new Error("403 Forbidden: Please provide a valid Gemini API key starting with 'AIzaSy...' using the API Key button in the top right header.");
+            if (!response.ok) {
+              if (response.status === 429 && attempt === 1) {
+                // Wait 1.5 seconds before retrying on rate limit
+                await new Promise(r => setTimeout(r, 1500));
+                continue;
+              }
+              if (response.status === 403) {
+                throw new Error("403 Forbidden: Please provide a valid Gemini API key starting with 'AIzaSy...' using the API Key button in the top right header.");
+              }
+              if (response.status === 429) {
+                throw new Error("429 Too Many Requests: Rate limit exceeded. Please wait a few seconds before trying again.");
+              }
+              throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            const candidate = result.candidates?.[0];
+
+            if (candidate && candidate.content?.parts?.[0]?.text) {
+              const text = candidate.content.parts[0].text;
+              responseText.innerText = text;
+
+              // DYNAMIC DISPLAY CARDS UPDATE FROM AI RESULT
+              const statusTag = document.getElementById('live-data-status');
+              if (statusTag) {
+                statusTag.innerText = 'AI Live Grounded Verified';
+                statusTag.className = 'text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold border border-emerald-300';
+              }
+
+              // Parse key figures to update cards accurately
+              const handKgMatch = text.match(/(\d+)\s*kg\s*hand/i) || text.match(/hand\s*(?:baggage|luggage|bag)?[:\s]*(\d+)\s*kg/i);
+              if (handKgMatch && handKgMatch[1]) {
+                const hKg = parseFloat(handKgMatch[1]);
+                const elHandWt = document.getElementById('res-hand-weight');
+                if (elHandWt) elHandWt.innerText = currentUnitSystem === 'metric' ? `${hKg.toFixed(1)} KG` : `${(hKg * 2.20462).toFixed(1)} LBS`;
+              }
+
+              const checkedPcMatch = text.match(/(\d+)\s*(?:piece|pieces|pc|bags)/i);
+              if (checkedPcMatch && checkedPcMatch[1]) {
+                const cPcs = parseInt(checkedPcMatch[1]);
+                const elCheckedPcs = document.getElementById('res-checked-pcs');
+                if (elCheckedPcs) elCheckedPcs.innerText = `${cPcs} Piece${cPcs !== 1 ? 's' : ''}`;
+              }
+
+              const checkedKgMatch = text.match(/(\d+)\s*kg\s*(?:each|per bag|per piece)/i);
+              if (checkedKgMatch && checkedKgMatch[1]) {
+                const cKg = parseFloat(checkedKgMatch[1]);
+                const elCheckedWtEach = document.getElementById('res-checked-weight-each');
+                if (elCheckedWtEach) elCheckedWtEach.innerText = currentUnitSystem === 'metric' ? `${cKg.toFixed(1)} KG each` : `${(cKg * 2.20462).toFixed(1)} LBS each`;
+              }
+
+              success = true;
+              break;
+            } else {
+              throw new Error("Received empty content from Gemini API.");
+            }
+          } catch (err) {
+            lastError = err;
+            if (err.message.includes('403') || err.message.includes('Forbidden')) {
+              break; // Do not retry key errors on other models
+            }
           }
-          throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
         }
+      }
 
-        const result = await response.json();
-        const candidate = result.candidates?.[0];
-
-        if (candidate && candidate.content?.parts?.[0]?.text) {
-          const text = candidate.content.parts[0].text;
-          responseText.innerText = text;
-
-          // DYNAMIC DISPLAY CARDS UPDATE FROM AI RESULT
-          const statusTag = document.getElementById('live-data-status');
-          if (statusTag) {
-            statusTag.innerText = 'AI Live Grounded Verified';
-            statusTag.className = 'text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold border border-emerald-300';
-          }
-
-          // Parse key figures to update cards accurately
-          const handKgMatch = text.match(/(\d+)\s*kg\s*hand/i) || text.match(/hand\s*(?:baggage|luggage|bag)?[:\s]*(\d+)\s*kg/i);
-          if (handKgMatch && handKgMatch[1]) {
-            const hKg = parseFloat(handKgMatch[1]);
-            const elHandWt = document.getElementById('res-hand-weight');
-            if (elHandWt) elHandWt.innerText = currentUnitSystem === 'metric' ? `${hKg.toFixed(1)} KG` : `${(hKg * 2.20462).toFixed(1)} LBS`;
-          }
-
-          const checkedPcMatch = text.match(/(\d+)\s*(?:piece|pieces|pc|bags)/i);
-          if (checkedPcMatch && checkedPcMatch[1]) {
-            const cPcs = parseInt(checkedPcMatch[1]);
-            const elCheckedPcs = document.getElementById('res-checked-pcs');
-            if (elCheckedPcs) elCheckedPcs.innerText = `${cPcs} Piece${cPcs !== 1 ? 's' : ''}`;
-          }
-
-          const checkedKgMatch = text.match(/(\d+)\s*kg\s*(?:each|per bag|per piece)/i);
-          if (checkedKgMatch && checkedKgMatch[1]) {
-            const cKg = parseFloat(checkedKgMatch[1]);
-            const elCheckedWtEach = document.getElementById('res-checked-weight-each');
-            if (elCheckedWtEach) elCheckedWtEach.innerText = currentUnitSystem === 'metric' ? `${cKg.toFixed(1)} KG each` : `${(cKg * 2.20462).toFixed(1)} LBS each`;
-          }
-        } else {
-          responseText.innerText = "Received response from Gemini API, but text content was empty.";
-        }
-      } catch (err) {
-        responseText.innerText = `Gemini AI Copilot Lookup Error: ${err.message}`;
+      if (!success) {
+        responseText.innerText = `Gemini AI Copilot Lookup Error: ${lastError ? lastError.message : 'Unknown error'}`;
       }
     }
   </script>
