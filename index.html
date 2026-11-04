@@ -9,6 +9,19 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✈️</text></svg>">
   <link rel="shortcut icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✈️</text></svg>">
 
+  <!-- PWA Web App Manifest & Apple iOS Meta Tags -->
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BaggageGuide">
+  <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIkJhZ2dhZ2VHdWlkZSBBSSAtIFVuaXZlcnNhbCBCYWdnYWdlIEFzc2lzdGFudCIsCiAgInNob3J0X25hbWUiOiAiQmFnZ2FnZUd1aWRlIiwKICAic3RhcnRfdXJsIjogIi4vIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMGYxNzJhIiwKICAidGhlbWVfY29sb3IiOiAiIzBmMTcyYSIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zyd2aWV3Qm94PScwIDAgMTAwIDEwMCc+PHRleHQgeT0nLjllbScgZm9udC1zaXplPSc5MCc+✈️</text></svg>:",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}">
+
   <!-- Suppress Tailwind CDN production warning -->
   <script>
     (function() {
@@ -43,30 +56,36 @@
   
   <style>
     body { font-family: 'Inter', sans-serif; }
-    .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(226, 232, 240, 0.8); }
+    .glass-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(226, 232, 240, 0.8); }
+    .glass-dark { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); }
+    .glow-sky { box-shadow: 0 10px 30px -5px rgba(14, 165, 233, 0.2); }
+    .glow-emerald { box-shadow: 0 10px 30px -5px rgba(16, 185, 129, 0.2); }
+    .glow-indigo { box-shadow: 0 10px 30px -5px rgba(99, 102, 241, 0.25); }
     tr:nth-child(even) { background-color: #f8fafc; }
+    .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .card-hover:hover { transform: translateY(-3px); }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col selection:bg-sky-500 selection:text-white">
+<body class="bg-slate-100 text-slate-900 min-h-screen flex flex-col selection:bg-sky-500 selection:text-white">
 
   <!-- TOP HEADER -->
-  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white shadow-md text-lg shrink-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 via-indigo-600 to-emerald-500 flex items-center justify-center text-white shadow-md text-lg shrink-0 animate-pulse">
           <i class="fa-solid fa-plane-departure"></i>
         </div>
         <div>
-          <h1 class="font-extrabold text-base tracking-tight text-slate-900 flex items-center gap-2">
+          <h1 class="font-black text-base tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-sky-700 bg-clip-text text-transparent flex items-center gap-2">
             BaggageGuide AI
-            <span class="text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">v3.8 Stable</span>
+            <span class="text-[10px] bg-gradient-to-r from-sky-500 to-indigo-600 text-white px-2.5 py-0.5 rounded-full font-extrabold uppercase tracking-wider shadow-xs">PWA Ready</span>
           </h1>
           <p class="text-[11px] text-slate-500 font-medium hidden sm:block">Global Airline Allowance & Excess Fee Engine</p>
         </div>
       </div>
 
       <!-- DESKTOP NAVIGATION TABS -->
-      <nav class="hidden md:flex items-center space-x-1">
+      <nav class="hidden md:flex items-center space-x-1.5">
         <button onclick="switchTab('calculator')" id="nav-calculator" class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 text-sky-700 bg-sky-50 border border-sky-200 shadow-sm">
           <i class="fa-solid fa-calculator"></i><span>Calculator</span>
         </button>
@@ -84,26 +103,32 @@
         </button>
       </nav>
 
-      <!-- SETTINGS, API KEY & MOBILE MENU TOGGLE -->
+      <!-- SETTINGS, API KEY, PWA INSTALL & MOBILE MENU TOGGLE -->
       <div class="flex items-center space-x-2">
-        <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
-          <button onclick="setUnitSystem('metric')" id="unit-metric" class="px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg transition-all bg-indigo-600 text-white shadow text-[11px] sm:text-xs">KG</button>
+        <!-- PWA Install Button (Shown when browser supports installation) -->
+        <button id="pwa-install-btn" onclick="installPwaApp()" class="hidden px-2.5 py-1.5 sm:px-3 sm:py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-95 text-white rounded-xl text-xs font-extrabold flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer">
+          <i class="fa-solid fa-download text-white"></i>
+          <span class="hidden sm:inline">Install App</span>
+        </button>
+
+        <div class="flex bg-slate-200/80 p-1 rounded-xl border border-slate-300/60 text-xs font-bold">
+          <button onclick="setUnitSystem('metric')" id="unit-metric" class="px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg transition-all bg-indigo-600 text-white shadow text-[11px] sm:text-xs font-black">KG</button>
           <button onclick="setUnitSystem('imperial')" id="unit-imperial" class="px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg transition-all text-slate-600 hover:text-slate-900 text-[11px] sm:text-xs">LBS</button>
         </div>
-        <button onclick="toggleApiKeyModal()" class="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center space-x-1 border border-slate-200 transition-all" title="Configure API Key">
+        <button onclick="toggleApiKeyModal()" class="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold flex items-center space-x-1 border border-slate-200/80 shadow-xs transition-all" title="Configure API Key">
           <i class="fa-solid fa-key text-amber-500"></i>
           <span class="hidden sm:inline">API Key</span>
         </button>
 
         <!-- Mobile Menu Hamburger Button -->
-        <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-xl text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 focus:outline-none">
+        <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-xl text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 focus:outline-none">
           <i class="fa-solid fa-bars text-sm"></i>
         </button>
       </div>
     </div>
 
     <!-- MOBILE NAVIGATION MENU -->
-    <div id="mobile-menu" class="hidden md:hidden border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 space-y-1">
+    <div id="mobile-menu" class="hidden md:hidden border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 space-y-1 shadow-md">
       <button onclick="switchTab('calculator'); toggleMobileMenu()" id="mob-nav-calculator" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 text-sky-700 bg-sky-50 border border-sky-200">
         <i class="fa-solid fa-calculator w-5"></i><span>Calculator</span>
       </button>
@@ -150,16 +175,19 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         <!-- INPUT CONTROLS (Left Col) -->
-        <div class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4">
-          <h2 class="font-extrabold text-sm text-slate-900 flex items-center space-x-2 border-b border-slate-100 pb-3">
-            <i class="fa-solid fa-sliders text-sky-600"></i>
-            <span>Flight & Baggage Parameters</span>
+        <div class="lg:col-span-5 glass-card rounded-2xl shadow-sm border border-slate-200/90 p-4 sm:p-5 space-y-4">
+          <h2 class="font-extrabold text-sm text-slate-900 flex items-center justify-between border-b border-slate-200/80 pb-3">
+            <span class="flex items-center space-x-2">
+              <i class="fa-solid fa-sliders text-sky-600"></i>
+              <span>Flight & Baggage Parameters</span>
+            </span>
+            <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">Auto-Sync</span>
           </h2>
 
           <!-- Airline Select -->
           <div>
-            <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Airline Carrier</label>
-            <select id="calc-airline" onchange="calculateBaggageAllowance()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-slate-50 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            <label class="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Airline Carrier</label>
+            <select id="calc-airline" onchange="calculateBaggageAllowance()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-white shadow-xs focus:ring-2 focus:ring-sky-500 focus:outline-none">
               <!-- Dynamically populated -->
             </select>
           </div>
@@ -167,14 +195,14 @@
           <!-- Origin & Destination -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Origin Country</label>
-              <select id="calc-origin" onchange="calculateBaggageAllowance()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-slate-50 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+              <label class="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Origin Country</label>
+              <select id="calc-origin" onchange="calculateBaggageAllowance()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-white shadow-xs focus:ring-2 focus:ring-sky-500 focus:outline-none">
                 <!-- Dynamically populated -->
               </select>
             </div>
             <div>
-              <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Destination Country</label>
-              <select id="calc-dest" onchange="calculateBaggageAllowance()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-slate-50 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+              <label class="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Destination Country</label>
+              <select id="calc-dest" onchange="calculateBaggageAllowance()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-white shadow-xs focus:ring-2 focus:ring-sky-500 focus:outline-none">
                 <!-- Dynamically populated -->
               </select>
             </div>
@@ -183,8 +211,8 @@
           <!-- Cabin Class & Fare Family -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Cabin Class</label>
-              <select id="calc-cabin" onchange="calculateBaggageAllowance()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-slate-50 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+              <label class="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Cabin Class</label>
+              <select id="calc-cabin" onchange="calculateBaggageAllowance()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-white shadow-xs focus:ring-2 focus:ring-sky-500 focus:outline-none">
                 <option value="economy">Economy Class</option>
                 <option value="premium">Premium Economy</option>
                 <option value="business">Business Class</option>
@@ -192,8 +220,8 @@
               </select>
             </div>
             <div>
-              <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Fare Family</label>
-              <select id="calc-fare" onchange="calculateBaggageAllowance()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-slate-50 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+              <label class="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Fare Family</label>
+              <select id="calc-fare" onchange="calculateBaggageAllowance()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-white shadow-xs focus:ring-2 focus:ring-sky-500 focus:outline-none">
                 <option value="light">Light / Hand-Only</option>
                 <option value="standard" selected>Standard / Saver</option>
                 <option value="flex">Flex / Classic</option>
@@ -203,8 +231,8 @@
 
           <!-- Frequent Flyer Tier -->
           <div>
-            <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Frequent Flyer Tier</label>
-            <select id="calc-tier" onchange="calculateBaggageAllowance()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-slate-50 focus:ring-2 focus:ring-sky-500 focus:outline-none">
+            <label class="block text-[11px] font-extrabold text-slate-700 uppercase mb-1">Frequent Flyer Tier</label>
+            <select id="calc-tier" onchange="calculateBaggageAllowance()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-white shadow-xs focus:ring-2 focus:ring-sky-500 focus:outline-none">
               <option value="none">None / Standard Member</option>
               <option value="silver">Silver Tier (+1 PC / +10KG)</option>
               <option value="gold">Gold / Alliance Elite (+1 PC / +20KG)</option>
@@ -213,12 +241,12 @@
           </div>
 
           <!-- Action Buttons -->
-          <div class="pt-2 space-y-2">
-            <button onclick="seeBaggageDetails()" class="w-full py-3 px-4 bg-gradient-to-r from-sky-500 to-indigo-600 hover:opacity-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center space-x-2 transition-all cursor-pointer">
+          <div class="pt-2 space-y-2.5">
+            <button onclick="seeBaggageDetails()" class="w-full py-3.5 px-4 bg-gradient-to-r from-sky-500 via-indigo-600 to-indigo-700 hover:opacity-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md glow-sky flex items-center justify-center space-x-2 transition-all cursor-pointer">
               <i class="fa-solid fa-magnifying-glass text-sm"></i>
               <span>See Baggage Details</span>
             </button>
-            <button onclick="askGeminiRealtimeAI()" class="w-full py-3 px-4 bg-gradient-to-r from-sky-600 via-indigo-600 to-emerald-600 hover:opacity-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center space-x-2 transition-all cursor-pointer">
+            <button onclick="askGeminiRealtimeAI()" class="w-full py-3.5 px-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-sky-900 hover:opacity-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md glow-indigo flex items-center justify-center space-x-2 transition-all cursor-pointer">
               <i class="fa-solid fa-wand-magic-sparkles text-amber-300 text-sm animate-pulse"></i>
               <span>Ask Gemini AI Copilot (Real-Time)</span>
             </button>
@@ -227,62 +255,62 @@
 
         <!-- RESULTS DISPLAY (Right Col) -->
         <div class="lg:col-span-7 space-y-4">
-          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 gap-2">
+          <div class="glass-card rounded-2xl shadow-sm border border-slate-200/90 p-4 sm:p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200/80 pb-3 gap-2">
               <div>
                 <div class="flex items-center gap-2">
-                  <span id="res-airline-code" class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-sky-100 text-sky-800 border border-sky-200">AI</span>
-                  <span id="live-data-status" class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-semibold border border-slate-200">Static Base Rule</span>
+                  <span id="res-airline-code" class="px-2.5 py-0.5 rounded text-xs font-mono font-black bg-sky-100 text-sky-800 border border-sky-300">AI</span>
+                  <span id="live-data-status" class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold border border-slate-200">Static Base Rule</span>
                 </div>
-                <h2 id="res-airline-name" class="font-extrabold text-base text-slate-900 mt-1">Air India (AIC)</h2>
-                <p id="res-route-subtitle" class="text-xs text-slate-500">India → United States • ECONOMY CLASS (STANDARD)</p>
+                <h2 id="res-airline-name" class="font-black text-lg text-slate-900 mt-1 tracking-tight">Air India (AIC)</h2>
+                <p id="res-route-subtitle" class="text-xs text-slate-500 font-medium">India → United States • ECONOMY CLASS (STANDARD)</p>
               </div>
               <div class="sm:text-right">
-                <span id="res-system-tag" class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 inline-block">PIECE CONCEPT</span>
-                <p id="res-alliance-tag" class="text-xs font-bold text-slate-500 mt-1">Star Alliance</p>
+                <span id="res-system-tag" class="px-3 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 inline-block shadow-xs">PIECE CONCEPT</span>
+                <p id="res-alliance-tag" class="text-xs font-extrabold text-indigo-600 mt-1">Star Alliance</p>
               </div>
             </div>
 
             <!-- Allowance Grid -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <!-- Hand Baggage Card -->
-              <div class="bg-gradient-to-br from-sky-50 to-indigo-50 border border-sky-200 rounded-xl p-4 flex flex-col justify-between">
+              <div class="bg-gradient-to-br from-sky-50/90 via-indigo-50/50 to-white border border-sky-200/80 rounded-xl p-4 flex flex-col justify-between card-hover shadow-xs">
                 <div>
-                  <div class="flex items-center justify-between text-sky-900 font-bold text-xs uppercase mb-2">
-                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-briefcase"></i> Cabin Hand Baggage</span>
-                    <span id="res-hand-pcs" class="bg-sky-200/60 px-2 py-0.5 rounded text-[10px]">1 PC + Personal</span>
+                  <div class="flex items-center justify-between text-sky-950 font-black text-xs uppercase mb-2 tracking-wider">
+                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-briefcase text-sky-600"></i> Cabin Hand Baggage</span>
+                    <span id="res-hand-pcs" class="bg-sky-200/80 text-sky-900 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">1 PC + Personal</span>
                   </div>
-                  <div class="text-2xl font-black text-sky-950" id="res-hand-weight">7.0 KG</div>
-                  <p class="text-[11px] text-sky-700/80 mt-1">Max Dims: <span id="res-hand-dims" class="font-semibold">55 × 40 × 20 cm</span></p>
+                  <div class="text-3xl font-black text-sky-950 tracking-tight" id="res-hand-weight">7.0 KG</div>
+                  <p class="text-[11px] text-sky-800/90 mt-1 font-medium">Max Dims: <span id="res-hand-dims" class="font-bold text-sky-950">55 × 40 × 20 cm</span></p>
                 </div>
-                <div class="mt-3 pt-3 border-t border-sky-200/60 text-[10px] text-sky-800 font-medium flex items-center justify-between">
+                <div class="mt-3 pt-3 border-t border-sky-200/60 text-[10px] text-sky-900 font-bold flex items-center justify-between">
                   <span>Laptop / Handbag allowed</span>
-                  <i class="fa-solid fa-check-circle text-emerald-600"></i>
+                  <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
                 </div>
               </div>
 
               <!-- Checked Baggage Card -->
-              <div class="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 flex flex-col justify-between">
+              <div class="bg-gradient-to-br from-emerald-50/90 via-teal-50/50 to-white border border-emerald-200/80 rounded-xl p-4 flex flex-col justify-between card-hover shadow-xs">
                 <div>
-                  <div class="flex items-center justify-between text-emerald-900 font-bold text-xs uppercase mb-2">
-                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-suitcase-rolling"></i> Checked Baggage</span>
-                    <span id="res-checked-pcs" class="bg-emerald-200/60 px-2 py-0.5 rounded text-[10px]">2 Pieces</span>
+                  <div class="flex items-center justify-between text-emerald-950 font-black text-xs uppercase mb-2 tracking-wider">
+                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-suitcase-rolling text-emerald-600"></i> Checked Baggage</span>
+                    <span id="res-checked-pcs" class="bg-emerald-200/80 text-emerald-900 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">2 Pieces</span>
                   </div>
-                  <div class="text-2xl font-black text-emerald-950" id="res-checked-weight-each">23.0 KG <span class="text-xs font-medium text-emerald-700">each</span></div>
-                  <p class="text-[11px] text-emerald-700/80 mt-1">Total Weight: <span id="res-checked-weight-total" class="font-bold">46.0 KG Total</span></p>
+                  <div class="text-3xl font-black text-emerald-950 tracking-tight" id="res-checked-weight-each">23.0 KG <span class="text-xs font-semibold text-emerald-700">each</span></div>
+                  <p class="text-[11px] text-emerald-800/90 mt-1 font-medium">Total Weight: <span id="res-checked-weight-total" class="font-bold text-emerald-950">46.0 KG Total</span></p>
                 </div>
-                <div class="mt-3 pt-3 border-t border-emerald-200/60 text-[10px] text-emerald-800 font-medium flex items-center justify-between">
+                <div class="mt-3 pt-3 border-t border-emerald-200/60 text-[10px] text-emerald-900 font-bold flex items-center justify-between">
                   <span>Linear Dims Max: 158 cm (62 in)</span>
-                  <i class="fa-solid fa-shield-check text-emerald-600"></i>
+                  <i class="fa-solid fa-shield-check text-emerald-600 text-sm"></i>
                 </div>
               </div>
             </div>
 
             <!-- Gemini AI Response Box -->
-            <div id="ai-response-box" class="hidden bg-slate-900 text-slate-100 rounded-xl p-4 space-y-2 border border-slate-800 shadow-inner">
-              <div class="flex items-center justify-between text-xs text-sky-400 font-bold uppercase tracking-wider border-b border-slate-800 pb-2">
-                <span class="flex items-center gap-2"><i class="fa-solid fa-robot"></i> Gemini AI Grounded Intelligence</span>
-                <span class="text-[10px] bg-sky-950 text-sky-300 px-2 py-0.5 rounded">Live Grounded Lookup</span>
+            <div id="ai-response-box" class="hidden glass-dark text-slate-100 rounded-xl p-4 space-y-2 border border-slate-800 shadow-lg glow-indigo">
+              <div class="flex items-center justify-between text-xs text-sky-400 font-black uppercase tracking-wider border-b border-slate-800 pb-2">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-robot text-sky-400 animate-bounce"></i> Gemini AI Grounded Intelligence</span>
+                <span class="text-[10px] bg-sky-950 text-sky-300 px-2 py-0.5 rounded-full border border-sky-800">Live Grounded Lookup</span>
               </div>
               <div id="ai-response-text" class="text-xs text-slate-300 leading-relaxed whitespace-pre-line font-mono">
                 Awaiting query...
@@ -291,33 +319,33 @@
           </div>
 
           <!-- VISUAL BOARDING PASS CARD -->
-          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5">
-            <h3 class="font-extrabold text-xs text-slate-900 uppercase tracking-wider mb-3 flex items-center space-x-2">
-              <i class="fa-solid fa-ticket text-indigo-600"></i>
+          <div class="glass-card rounded-2xl shadow-sm border border-slate-200/90 p-4 sm:p-5">
+            <h3 class="font-black text-xs text-slate-900 uppercase tracking-wider mb-3 flex items-center space-x-2">
+              <i class="fa-solid fa-ticket text-indigo-600 text-sm"></i>
               <span>Summary Boarding Pass Baggage Voucher</span>
             </h3>
-            <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 text-white rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-md">
               <div class="space-y-1">
-                <span class="text-[10px] font-mono tracking-widest text-indigo-300 uppercase">PASSENGER BAGGAGE RECEIPT</span>
-                <div class="text-sm font-black" id="pass-carrier-name">Air India</div>
-                <div class="text-xs text-slate-300 flex items-center space-x-2">
-                  <span id="pass-origin-val" class="font-bold">India</span>
+                <span class="text-[10px] font-mono tracking-widest text-indigo-300 uppercase font-black">PASSENGER BAGGAGE RECEIPT</span>
+                <div class="text-base font-black tracking-tight" id="pass-carrier-name">Air India</div>
+                <div class="text-xs text-slate-300 flex items-center space-x-2 font-semibold">
+                  <span id="pass-origin-val" class="font-bold text-white">India</span>
                   <i class="fa-solid fa-arrow-right text-[10px] text-indigo-400"></i>
-                  <span id="pass-dest-val" class="font-bold">United States</span>
+                  <span id="pass-dest-val" class="font-bold text-white">United States</span>
                 </div>
               </div>
               <div class="flex flex-wrap sm:flex-nowrap items-center gap-4 sm:space-x-6 border-t md:border-t-0 md:border-l border-indigo-900/80 pt-3 md:pt-0 md:pl-6 w-full md:w-auto justify-between">
                 <div>
-                  <span class="text-[10px] text-indigo-300 block uppercase">Cabin</span>
-                  <span class="text-xs font-bold bg-indigo-900/80 px-2.5 py-1 rounded border border-indigo-700 inline-block" id="pass-class-badge">ECONOMY</span>
+                  <span class="text-[10px] text-indigo-300 block uppercase font-bold">Cabin</span>
+                  <span class="text-xs font-black bg-indigo-900/90 px-2.5 py-1 rounded-lg border border-indigo-700 inline-block" id="pass-class-badge">ECONOMY</span>
                 </div>
                 <div>
-                  <span class="text-[10px] text-indigo-300 block uppercase">Hand Allowance</span>
-                  <span class="text-xs font-bold text-sky-300" id="pass-hand-val">1 PC × 7 KG</span>
+                  <span class="text-[10px] text-indigo-300 block uppercase font-bold">Hand Allowance</span>
+                  <span class="text-xs font-black text-sky-300" id="pass-hand-val">1 PC × 7 KG</span>
                 </div>
                 <div>
-                  <span class="text-[10px] text-indigo-300 block uppercase">Checked Allowance</span>
-                  <span class="text-xs font-bold text-emerald-300" id="pass-checked-val">2 PC × 23 KG</span>
+                  <span class="text-[10px] text-indigo-300 block uppercase font-bold">Checked Allowance</span>
+                  <span class="text-xs font-black text-emerald-300" id="pass-checked-val">2 PC × 23 KG</span>
                 </div>
               </div>
             </div>
@@ -499,6 +527,45 @@
 
   <!-- DATASETS AND LOGIC SCRIPT -->
   <script>
+    // PWA INSTALLATION PROMPT HANDLER
+    let deferredPwaPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPwaPrompt = e;
+      const btn = document.getElementById('pwa-install-btn');
+      if (btn) btn.classList.remove('hidden');
+    });
+
+    function installPwaApp() {
+      if (!deferredPwaPrompt) return;
+      deferredPwaPrompt.prompt();
+      deferredPwaPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted PWA installation');
+        }
+        deferredPwaPrompt = null;
+        const btn = document.getElementById('pwa-install-btn');
+        if (btn) btn.classList.add('hidden');
+      });
+    }
+
+    // REGISTER DUMMY INLINE SERVICE WORKER FOR PWA INSTALLABILITY
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        const swCode = `
+          self.addEventListener('install', (e) => self.skipWaiting());
+          self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+          self.addEventListener('fetch', (e) => {
+            // Network first with offline fallback logic
+            e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+          });
+        `;
+        const blob = new Blob([swCode], { type: 'text/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+        navigator.serviceWorker.register(swUrl).catch(err => console.log('PWA ServiceWorker registration optional:', err));
+      });
+    }
+
     // FULL EXPANDED 190+ WORLD COUNTRIES & TERRITORIES
     const COUNTRIES_DATA = [
       { name: "Afghanistan", iso2: "AF", iso3: "AFG", region: "Asia", flag: "🇦🇫", note: "Standard customs rules apply." },
