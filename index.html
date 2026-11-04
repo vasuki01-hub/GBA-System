@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BaggageGuide AI – Universal Baggage Allowance & Flight Assistant</title>
+
+  <!-- Inline SVG Favicon to eliminate favicon.ico 404 console error -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✈️</text></svg>">
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -117,6 +120,12 @@
 
       <!-- Right Controls: Unit System & Mobile Toggle -->
       <div class="flex items-center space-x-3">
+        <!-- API Key Settings Button -->
+        <button onclick="toggleApiKeyModal()" class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 flex items-center space-x-1.5 transition-all" title="Configure Gemini API Key">
+          <i class="fa-solid fa-key text-amber-500"></i>
+          <span class="hidden sm:inline">API Key</span>
+        </button>
+
         <div class="bg-slate-200/80 p-1 rounded-xl flex items-center text-xs font-bold border border-slate-300">
           <button id="unit-metric" onclick="setUnitSystem('metric')" class="px-2.5 py-1 rounded-lg transition-all bg-indigo-600 text-white shadow">KG / CM</button>
           <button id="unit-imperial" onclick="setUnitSystem('imperial')" class="px-2.5 py-1 rounded-lg transition-all text-slate-600 hover:text-slate-900">LBS / IN</button>
@@ -154,6 +163,35 @@
 
   <!-- MAIN CONTAINER -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- API KEY MODAL -->
+    <div id="api-key-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+      <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200 space-y-5">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+          <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-key text-amber-500 text-lg"></i>
+            <h3 class="text-base font-black text-slate-900">Gemini AI API Key Config</h3>
+          </div>
+          <button onclick="toggleApiKeyModal()" class="text-slate-400 hover:text-slate-700">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <p class="text-xs text-slate-600 leading-relaxed">
+          When hosting on GitHub Pages or custom domains, enter your free Google Gemini API Key below to enable live AI lookups.
+        </p>
+
+        <div class="space-y-2">
+          <label class="block text-[11px] font-extrabold uppercase text-slate-600">Google Gemini API Key</label>
+          <input type="password" id="user-gemini-key" placeholder="AIzaSy..." class="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-900 focus:ring-2 focus:ring-sky-600 focus:outline-none">
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-2">
+          <button onclick="toggleApiKeyModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-xs font-bold text-slate-600 hover:bg-slate-200">Cancel</button>
+          <button onclick="saveApiKey()" class="px-5 py-2 rounded-xl bg-sky-600 text-white text-xs font-bold hover:bg-sky-700 shadow-md">Save Key</button>
+        </div>
+      </div>
+    </div>
 
     <!-- TAB 1: CALCULATOR -->
     <section id="tab-calculator" class="space-y-8">
@@ -893,14 +931,41 @@
     // GLOBAL APP STATE
     let currentUnitSystem = "metric";
     let selectedAirlineObj = AIRLINES_FULL_DB.find(a => a.iata === 'AI') || AIRLINES_FULL_DB[0];
+    let userApiKey = "";
 
     window.onload = function() {
+      // Load saved user key if available
+      try {
+        const savedKey = sessionStorage.getItem('gemini_api_key');
+        if (savedKey) {
+          userApiKey = savedKey;
+          const inputEl = document.getElementById('user-gemini-key');
+          if (inputEl) inputEl.value = savedKey;
+        }
+      } catch (e) {}
+
       populateSelectDropdowns();
       calculateBaggageAllowance();
       renderAirlinesDirectory();
       renderCountriesDirectory();
       calculateExcessFees();
     };
+
+    function toggleApiKeyModal() {
+      const modal = document.getElementById('api-key-modal');
+      if (modal) modal.classList.toggle('hidden');
+    }
+
+    function saveApiKey() {
+      const inputEl = document.getElementById('user-gemini-key');
+      if (inputEl) {
+        userApiKey = inputEl.value.trim();
+        try {
+          sessionStorage.setItem('gemini_api_key', userApiKey);
+        } catch (e) {}
+      }
+      toggleApiKeyModal();
+    }
 
     // TAB SWITCHER
     function switchTab(tabId) {
@@ -1079,18 +1144,26 @@
       const responseText = document.getElementById('ai-response-text');
 
       responseBox.classList.remove('hidden');
-      responseText.innerText = "Querying Gemini AI Copilot for real-time grounded baggage details...";
 
       const airline = selectedAirlineObj.name;
       const origin = document.getElementById('calc-origin').value;
       const dest = document.getElementById('calc-dest').value;
       const cabin = document.getElementById('calc-cabin').value;
 
+      // Determine Key (User supplied key, fallback to canvas environment key if present)
+      const keyToUse = userApiKey || "";
+
+      if (!keyToUse) {
+        responseText.innerText = `💡 Note: You are running this site on a standalone domain / GitHub Pages without an active Gemini API key configured.\n\nTo perform live AI queries, click the "API Key" button at the top right and enter your free key from Google AI Studio.\n\n[Instant Local Calculation Result]:\n• Carrier: ${airline}\n• Route: ${origin} → ${dest}\n• Class: ${cabin.toUpperCase()}\n• Hand Bag: ${document.getElementById('res-hand-weight').innerText}\n• Checked Hold Bag: ${document.getElementById('res-checked-weight-total').innerText}`;
+        return;
+      }
+
+      responseText.innerText = "Querying Gemini AI Copilot for real-time grounded baggage details...";
+
       const userPrompt = `Provide a concise baggage allowance summary for ${airline} flying from ${origin} to ${dest} in ${cabin} class. Detail hand luggage weight/dimensions, checked bag piece count/weight caps, and overweight baggage fees.`;
 
       try {
-        const apiKey = ""; // Canvas runtime provides key automatically
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${keyToUse}`;
 
         const payload = {
           contents: [{ parts: [{ text: userPrompt }] }],
@@ -1106,6 +1179,13 @@
           body: JSON.stringify(payload)
         });
 
+        if (!response.ok) {
+          if (response.status === 403) {
+            throw new Error("403 Forbidden - The API key provided is invalid or unauthorized. Please check your Gemini API key in settings.");
+          }
+          throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+        }
+
         const result = await response.json();
         const candidate = result.candidates?.[0];
 
@@ -1115,7 +1195,7 @@
           responseText.innerText = "Received response structure from Gemini API, but text was empty. Please try again.";
         }
       } catch (err) {
-        responseText.innerText = `Gemini AI Copilot Lookup Error: ${err.message}. Please check connection or parameters.`;
+        responseText.innerText = `Gemini AI Copilot Lookup Error: ${err.message}`;
       }
     }
   </script>
