@@ -59,7 +59,7 @@
         <div>
           <h1 class="font-extrabold text-base tracking-tight text-slate-900 flex items-center gap-2">
             BaggageGuide AI
-            <span class="text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">v3.6 Live</span>
+            <span class="text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">v3.7 Stable</span>
           </h1>
           <p class="text-[11px] text-slate-500 font-medium hidden sm:block">Global Airline Allowance & Excess Fee Engine</p>
         </div>
@@ -212,8 +212,12 @@
             </select>
           </div>
 
-          <!-- Gemini Live AI Button -->
-          <div class="pt-2">
+          <!-- Action Buttons -->
+          <div class="pt-2 space-y-2">
+            <button onclick="calculateBaggageAllowance()" class="w-full py-3 px-4 bg-gradient-to-r from-sky-500 to-indigo-600 hover:opacity-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center space-x-2 transition-all cursor-pointer">
+              <i class="fa-solid fa-magnifying-glass text-sm"></i>
+              <span>See Baggage Details</span>
+            </button>
             <button onclick="askGeminiRealtimeAI()" class="w-full py-3 px-4 bg-gradient-to-r from-sky-600 via-indigo-600 to-emerald-600 hover:opacity-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center space-x-2 transition-all cursor-pointer">
               <i class="fa-solid fa-wand-magic-sparkles text-amber-300 text-sm animate-pulse"></i>
               <span>Ask Gemini AI Copilot (Real-Time)</span>
@@ -956,7 +960,7 @@
 
       // ROUTE EXCEPTION HANDLING (Transatlantic & Transpacific piece rules for US/Canada)
       const isNorthAmericaRoute = (origin === 'United States' || dest === 'United States' || origin === 'Canada' || dest === 'Canada');
-      if (isNorthAmericaRoute && (code === 'AI' || code === 'EK' || code === 'EY' || code === 'QR' || code === 'TK' || code === 'CX' || code === 'NH' || code === 'JL' || code === 'CA' || code === 'CZ' || code === 'MU')) {
+      if (isNorthAmericaRoute && (code === 'AI' || code === 'EK' || code === 'EY' || code === 'QR' || code === 'TK' || code === 'CX' || code === 'NH' || code === 'JL' || code === 'CA' || code === 'CZ' || code === 'MU' || code === 'BA' || code === 'VS')) {
         checkedPcs = Math.max(checkedPcs, 2);
       }
 
@@ -1110,7 +1114,19 @@
 
       responseText.innerText = "Querying Gemini AI Copilot for live grounded baggage rules...";
 
-      const userPrompt = `Provide exact official real-time baggage allowance for ${airline} flying from ${origin} to ${dest} in ${cabin} class. Detail hand luggage (max weight in kg, pieces), checked baggage (number of pieces allowed, max weight per piece in kg), linear dimension limits, and overweight fee rules.`;
+      const userPrompt = `Provide a comprehensive official baggage allowance report for ${airline} flying from ${origin} to ${dest} in ${cabin} class. Include:
+### 1. Hand Baggage (Cabin)
+- Piece count and dimensions
+- Weight limit
+### 2. Checked Baggage
+- Number of pieces included
+- Max weight per piece
+- Linear dimensions max
+### 3. Fare Family & Status Perks
+- Differences across Light vs Standard vs Flex fares
+- Frequent flyer alliance baggage perks
+### 4. Overweight & Excess Fees
+- Surcharge rates for extra pieces and excess weight.`;
 
       try {
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
@@ -1146,22 +1162,22 @@
             statusTag.className = 'text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold border border-emerald-300';
           }
 
-          // Try extracting key figures if mentioned in text
-          const handKgMatch = text.match(/hand\s*(?:baggage|luggage|bag)?\s*(?:limit|allowance|weight)?[:\s]*(\d+)\s*kg/i) || text.match(/(\d+)\s*kg\s*hand/i);
+          // Parse key figures to update cards accurately
+          const handKgMatch = text.match(/(\d+)\s*kg\s*hand/i) || text.match(/hand\s*(?:baggage|luggage|bag)?[:\s]*(\d+)\s*kg/i);
           if (handKgMatch && handKgMatch[1]) {
             const hKg = parseFloat(handKgMatch[1]);
             const elHandWt = document.getElementById('res-hand-weight');
             if (elHandWt) elHandWt.innerText = currentUnitSystem === 'metric' ? `${hKg.toFixed(1)} KG` : `${(hKg * 2.20462).toFixed(1)} LBS`;
           }
 
-          const checkedPcMatch = text.match(/(\d+)\s*(?:piece|pc|pieces|bags)/i);
+          const checkedPcMatch = text.match(/(\d+)\s*(?:piece|pieces|pc|bags)/i);
           if (checkedPcMatch && checkedPcMatch[1]) {
             const cPcs = parseInt(checkedPcMatch[1]);
             const elCheckedPcs = document.getElementById('res-checked-pcs');
             if (elCheckedPcs) elCheckedPcs.innerText = `${cPcs} Piece${cPcs !== 1 ? 's' : ''}`;
           }
 
-          const checkedKgMatch = text.match(/(\d+)\s*kg\s*(?:each|per bag)/i) || text.match(/(\d+)\s*kg\s*checked/i);
+          const checkedKgMatch = text.match(/(\d+)\s*kg\s*(?:each|per bag|per piece)/i);
           if (checkedKgMatch && checkedKgMatch[1]) {
             const cKg = parseFloat(checkedKgMatch[1]);
             const elCheckedWtEach = document.getElementById('res-checked-weight-each');
