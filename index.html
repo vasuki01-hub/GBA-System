@@ -53,19 +53,19 @@
   <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white shadow-md text-lg">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center text-white shadow-md text-lg shrink-0">
           <i class="fa-solid fa-plane-departure"></i>
         </div>
         <div>
           <h1 class="font-extrabold text-base tracking-tight text-slate-900 flex items-center gap-2">
             BaggageGuide AI
-            <span class="text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">v3.5 Live</span>
+            <span class="text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">v3.6 Live</span>
           </h1>
-          <p class="text-[11px] text-slate-500 font-medium">Global Airline Allowance & Excess Fee Engine</p>
+          <p class="text-[11px] text-slate-500 font-medium hidden sm:block">Global Airline Allowance & Excess Fee Engine</p>
         </div>
       </div>
 
-      <!-- NAVIGATION TABS -->
+      <!-- DESKTOP NAVIGATION TABS -->
       <nav class="hidden md:flex items-center space-x-1">
         <button onclick="switchTab('calculator')" id="nav-calculator" class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 text-sky-700 bg-sky-50 border border-sky-200 shadow-sm">
           <i class="fa-solid fa-calculator"></i><span>Calculator</span>
@@ -84,17 +84,41 @@
         </button>
       </nav>
 
-      <!-- SETTINGS & API KEY -->
+      <!-- SETTINGS, API KEY & MOBILE MENU TOGGLE -->
       <div class="flex items-center space-x-2">
         <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
-          <button onclick="setUnitSystem('metric')" id="unit-metric" class="px-2.5 py-1 rounded-lg transition-all bg-indigo-600 text-white shadow">Metric (KG)</button>
-          <button onclick="setUnitSystem('imperial')" id="unit-imperial" class="px-2.5 py-1 rounded-lg transition-all text-slate-600 hover:text-slate-900">Imperial (LBS)</button>
+          <button onclick="setUnitSystem('metric')" id="unit-metric" class="px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg transition-all bg-indigo-600 text-white shadow text-[11px] sm:text-xs">KG</button>
+          <button onclick="setUnitSystem('imperial')" id="unit-imperial" class="px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg transition-all text-slate-600 hover:text-slate-900 text-[11px] sm:text-xs">LBS</button>
         </div>
-        <button onclick="toggleApiKeyModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center space-x-1 border border-slate-200 transition-all" title="Configure API Key">
+        <button onclick="toggleApiKeyModal()" class="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center space-x-1 border border-slate-200 transition-all" title="Configure API Key">
           <i class="fa-solid fa-key text-amber-500"></i>
           <span class="hidden sm:inline">API Key</span>
         </button>
+
+        <!-- Mobile Menu Hamburger Button -->
+        <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-xl text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 focus:outline-none">
+          <i class="fa-solid fa-bars text-sm"></i>
+        </button>
       </div>
+    </div>
+
+    <!-- MOBILE NAVIGATION MENU -->
+    <div id="mobile-menu" class="hidden md:hidden border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 space-y-1">
+      <button onclick="switchTab('calculator'); toggleMobileMenu()" id="mob-nav-calculator" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 text-sky-700 bg-sky-50 border border-sky-200">
+        <i class="fa-solid fa-calculator w-5"></i><span>Calculator</span>
+      </button>
+      <button onclick="switchTab('directory'); toggleMobileMenu()" id="mob-nav-directory" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 text-slate-600 hover:bg-slate-100">
+        <i class="fa-solid fa-plane w-5"></i><span>Airlines (90+)</span>
+      </button>
+      <button onclick="switchTab('countries'); toggleMobileMenu()" id="mob-nav-countries" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 text-slate-600 hover:bg-slate-100">
+        <i class="fa-solid fa-globe w-5"></i><span>Countries (190+)</span>
+      </button>
+      <button onclick="switchTab('excess-fee'); toggleMobileMenu()" id="mob-nav-excess-fee" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 text-slate-600 hover:bg-slate-100">
+        <i class="fa-solid fa-money-bill-wave w-5"></i><span>Excess Fees</span>
+      </button>
+      <button onclick="switchTab('prohibited'); toggleMobileMenu()" id="mob-nav-prohibited" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 text-slate-600 hover:bg-slate-100">
+        <i class="fa-solid fa-shield-halved w-5"></i><span>Prohibited Items</span>
+      </button>
     </div>
   </header>
 
@@ -126,7 +150,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         <!-- INPUT CONTROLS (Left Col) -->
-        <div class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+        <div class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4">
           <h2 class="font-extrabold text-sm text-slate-900 flex items-center space-x-2 border-b border-slate-100 pb-3">
             <i class="fa-solid fa-sliders text-sky-600"></i>
             <span>Flight & Baggage Parameters</span>
@@ -141,7 +165,7 @@
           </div>
 
           <!-- Origin & Destination -->
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Origin Country</label>
               <select id="calc-origin" onchange="calculateBaggageAllowance()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-slate-50 focus:ring-2 focus:ring-sky-500 focus:outline-none">
@@ -157,7 +181,7 @@
           </div>
 
           <!-- Cabin Class & Fare Family -->
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">Cabin Class</label>
               <select id="calc-cabin" onchange="calculateBaggageAllowance()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-slate-50 focus:ring-2 focus:ring-sky-500 focus:outline-none">
@@ -199,15 +223,15 @@
 
         <!-- RESULTS DISPLAY (Right Col) -->
         <div class="lg:col-span-7 space-y-4">
-          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 gap-2">
               <div>
                 <span id="res-airline-code" class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-sky-100 text-sky-800 border border-sky-200">AI</span>
                 <h2 id="res-airline-name" class="font-extrabold text-base text-slate-900 mt-1">Air India (AIC)</h2>
                 <p id="res-route-subtitle" class="text-xs text-slate-500">India → United States • ECONOMY CLASS (STANDARD)</p>
               </div>
-              <div class="text-right">
-                <span id="res-system-tag" class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">PIECE CONCEPT</span>
+              <div class="sm:text-right">
+                <span id="res-system-tag" class="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 inline-block">PIECE CONCEPT</span>
                 <p id="res-alliance-tag" class="text-xs font-bold text-slate-500 mt-1">Star Alliance</p>
               </div>
             </div>
@@ -260,7 +284,7 @@
           </div>
 
           <!-- VISUAL BOARDING PASS CARD -->
-          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5">
             <h3 class="font-extrabold text-xs text-slate-900 uppercase tracking-wider mb-3 flex items-center space-x-2">
               <i class="fa-solid fa-ticket text-indigo-600"></i>
               <span>Summary Boarding Pass Baggage Voucher</span>
@@ -275,10 +299,10 @@
                   <span id="pass-dest-val" class="font-bold">United States</span>
                 </div>
               </div>
-              <div class="flex items-center space-x-6 border-t md:border-t-0 md:border-l border-indigo-900/80 pt-3 md:pt-0 md:pl-6 w-full md:w-auto justify-between">
+              <div class="flex flex-wrap sm:flex-nowrap items-center gap-4 sm:space-x-6 border-t md:border-t-0 md:border-l border-indigo-900/80 pt-3 md:pt-0 md:pl-6 w-full md:w-auto justify-between">
                 <div>
                   <span class="text-[10px] text-indigo-300 block uppercase">Cabin</span>
-                  <span class="text-xs font-bold bg-indigo-900/80 px-2.5 py-1 rounded border border-indigo-700" id="pass-class-badge">ECONOMY</span>
+                  <span class="text-xs font-bold bg-indigo-900/80 px-2.5 py-1 rounded border border-indigo-700 inline-block" id="pass-class-badge">ECONOMY</span>
                 </div>
                 <div>
                   <span class="text-[10px] text-indigo-300 block uppercase">Hand Allowance</span>
@@ -614,6 +638,11 @@
       if (modal) modal.classList.toggle('hidden');
     }
 
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      if (menu) menu.classList.toggle('hidden');
+    }
+
     function saveApiKey() {
       const inputEl = document.getElementById('user-gemini-key');
       if (inputEl) {
@@ -638,12 +667,23 @@
       tabs.forEach(t => {
         const el = document.getElementById(`tab-${t}`);
         const nav = document.getElementById(`nav-${t}`);
+        const mobNav = document.getElementById(`mob-nav-${t}`);
+
         if (el) el.classList.toggle('hidden', t !== tabId);
+        
         if (nav) {
           if (t === tabId) {
             nav.className = 'px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 text-sky-700 bg-sky-50 border border-sky-200 shadow-sm';
           } else {
             nav.className = 'px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 text-slate-600 hover:text-sky-700 hover:bg-slate-100';
+          }
+        }
+
+        if (mobNav) {
+          if (t === tabId) {
+            mobNav.className = 'w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 text-sky-700 bg-sky-50 border border-sky-200';
+          } else {
+            mobNav.className = 'w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 text-slate-600 hover:bg-slate-100';
           }
         }
       });
@@ -653,8 +693,8 @@
       currentUnitSystem = sys;
       const mBtn = document.getElementById('unit-metric');
       const iBtn = document.getElementById('unit-imperial');
-      if (mBtn) mBtn.className = sys === 'metric' ? 'px-2.5 py-1 rounded-lg transition-all bg-indigo-600 text-white shadow' : 'px-2.5 py-1 rounded-lg transition-all text-slate-600 hover:text-slate-900';
-      if (iBtn) iBtn.className = sys === 'imperial' ? 'px-2.5 py-1 rounded-lg transition-all bg-indigo-600 text-white shadow' : 'px-2.5 py-1 rounded-lg transition-all text-slate-600 hover:text-slate-900';
+      if (mBtn) mBtn.className = sys === 'metric' ? 'px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg transition-all bg-indigo-600 text-white shadow text-[11px] sm:text-xs' : 'px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg transition-all text-slate-600 hover:text-slate-900 text-[11px] sm:text-xs';
+      if (iBtn) iBtn.className = sys === 'imperial' ? 'px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg transition-all bg-indigo-600 text-white shadow text-[11px] sm:text-xs' : 'px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg transition-all text-slate-600 hover:text-slate-900 text-[11px] sm:text-xs';
       calculateBaggageAllowance();
     }
 
@@ -854,7 +894,6 @@
       const dest = document.getElementById('calc-dest')?.value || "Destination";
       const cabin = document.getElementById('calc-cabin')?.value || "economy";
 
-      // 1. Check user-configured key first, or default to empty string for environment injection
       const apiKey = (userApiKey || "").trim();
 
       responseText.innerText = "Querying Gemini AI Copilot for live grounded baggage rules...";
@@ -862,7 +901,6 @@
       const userPrompt = `Provide a concise baggage allowance summary for ${airline} flying from ${origin} to ${dest} in ${cabin} class. Detail hand luggage weight/dimensions, checked bag piece count/weight caps, and overweight baggage fees.`;
 
       try {
-        // Use gemini-3-flash-preview endpoint with apiKey string (or empty string for runtime injection)
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
         const payload = {
@@ -877,7 +915,7 @@
 
         if (!response.ok) {
           if (response.status === 403) {
-            throw new Error("403 Forbidden: If running locally or on external hosting without runtime injection, please ensure a valid AI Studio API key starting with 'AIzaSy...' is provided in the API Key modal.");
+            throw new Error("403 Forbidden: Please provide a valid Gemini API key starting with 'AIzaSy...' using the API Key button in the top right header.");
           }
           throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
         }
