@@ -314,13 +314,17 @@
             </div>
 
             <!-- Gemini AI Response Box -->
-            <div id="ai-response-box" class="hidden glass-dark text-slate-100 rounded-xl p-4 space-y-2 border border-slate-800 shadow-lg glow-indigo">
+            <div id="ai-response-box" class="hidden glass-dark text-slate-100 rounded-xl p-4 space-y-3 border border-slate-800 shadow-lg glow-indigo">
               <div class="flex items-center justify-between text-xs text-sky-400 font-black uppercase tracking-wider border-b border-slate-800 pb-2">
                 <span class="flex items-center gap-2"><i class="fa-solid fa-robot text-sky-400 animate-bounce"></i> Gemini AI Grounded Intelligence</span>
-                <span class="text-[10px] bg-sky-950 text-sky-300 px-2 py-0.5 rounded-full border border-sky-800">Live Grounded Lookup</span>
+                <span class="text-[10px] bg-sky-950 text-sky-300 px-2 py-0.5 rounded-full border border-sky-800">Live Web Grounded</span>
               </div>
               <div id="ai-response-text" class="text-xs text-slate-300 leading-relaxed whitespace-pre-line font-mono">
                 Awaiting query...
+              </div>
+              <div id="ai-sources-container" class="hidden border-t border-slate-800 pt-2 text-[11px]">
+                <span class="text-slate-400 font-bold block mb-1">Official Sources & Citations:</span>
+                <div id="ai-sources-list" class="flex flex-wrap gap-2"></div>
               </div>
             </div>
           </div>
@@ -1027,8 +1031,28 @@
       let checkedPcs = selectedAirlineObj.econPcs;
       let checkedKgEach = selectedAirlineObj.econKg || 23;
 
-      if (cabin === 'business') { checkedPcs = 2; checkedKgEach = 32; }
-      if (cabin === 'first') { checkedPcs = 3; checkedKgEach = 32; }
+      // Cabin Class Multipliers
+      if (cabin === 'premium') {
+        checkedPcs = Math.max(2, selectedAirlineObj.econPcs);
+        checkedKgEach = 23;
+      } else if (cabin === 'business') {
+        checkedPcs = 2;
+        checkedKgEach = 32;
+      } else if (cabin === 'first') {
+        checkedPcs = 3;
+        checkedKgEach = 32;
+      }
+
+      // Fare Family Modifiers
+      if (fare === 'light') {
+        if (cabin === 'economy') checkedPcs = 0;
+      }
+
+      // Route-Specific Exceptions (e.g., Virgin Atlantic, British Airways, Air India, Emirates on UK/US long-haul)
+      if (code === 'VS' && cabin === 'premium') {
+        checkedPcs = 2;
+        checkedKgEach = 23;
+      }
 
       let handWeightStr = currentUnitSystem === 'metric' ? `${handKg.toFixed(1)} KG` : `${(handKg * 2.20462).toFixed(1)} LBS`;
       let checkedWeightEachStr = currentUnitSystem === 'metric' ? `${checkedKgEach.toFixed(1)} KG` : `${(checkedKgEach * 2.20462).toFixed(1)} LBS`;
@@ -1122,34 +1146,116 @@
     async function askGeminiRealtimeAI() {
       const responseBox = document.getElementById('ai-response-box');
       const responseText = document.getElementById('ai-response-text');
+      const sourcesContainer = document.getElementById('ai-sources-container');
+      const sourcesList = document.getElementById('ai-sources-list');
+      const liveStatus = document.getElementById('live-data-status');
 
       if (!responseBox || !responseText) return;
 
       responseBox.classList.remove('hidden');
-      responseText.innerText = "Querying Gemini AI Copilot for live grounded baggage rules...";
+      responseText.innerText = "Querying official airline sources via Gemini AI Grounded Search...";
+      if (sourcesContainer) sourcesContainer.classList.add('hidden');
 
       const airline = selectedAirlineObj ? selectedAirlineObj.name : "Selected Carrier";
+      const airlineCode = selectedAirlineObj ? selectedAirlineObj.iata : "";
       const origin = document.getElementById('calc-origin')?.value || "Origin";
       const dest = document.getElementById('calc-dest')?.value || "Destination";
       const cabin = document.getElementById('calc-cabin')?.value || "economy";
+      const fare = document.getElementById('calc-fare')?.value || "standard";
       const apiKey = (userApiKey || "").trim();
 
-      const userPrompt = `Provide a comprehensive baggage allowance report for ${airline} flying from ${origin} to ${dest} in ${cabin} class.`;
+      const systemPrompt = `You are an expert aviation baggage intelligence engine. Provide the official baggage allowance rules for the specified flight. Always ground your facts using Google Search. Include exact numbers for hand luggage weight limit, cabin piece limit, checked bag piece limit, and weight limit per checked bag. Format clearly with Markdown headers.`;
+
+      const userQuery = `Find official current baggage allowance rules for ${airline} (${airlineCode}) flying from ${origin} to ${dest} in ${cabin} class (${fare} fare tier). Detail: 1. Cabin Hand Baggage (pieces and max weight per bag). 2. Checked Baggage (pieces and max weight per bag). 3. Dimension limits and restrictions.`;
+
+      const payload = {
+        contents: [{ parts: [{ text: userQuery }] }],
+        tools: [{ "google_search": {} }],
+        systemInstruction: { parts: [{ text: systemPrompt }] }
+      };
+
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
       try {
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: userPrompt }] }] })
+          body: JSON.stringify(payload)
         });
 
-        if (!response.ok) throw new Error(`API Error ${response.status}`);
+        if (!response.ok) {
+          const errJson = await response.json().catch(() => ({}));
+          const errMsg = errJson.error?.message || `HTTP ${response.status} ${response.statusText}`;
+          throw new Error(errMsg);
+        }
+
         const result = await response.json();
-        const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) responseText.innerText = text;
+        const candidate = result.candidates?.[0];
+        const text = candidate?.content?.parts?.[0]?.text;
+
+        if (text) {
+          responseText.innerText = text;
+          if (liveStatus) {
+            liveStatus.innerText = "AI Live Grounded Verified";
+            liveStatus.className = "text-[10px] bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-bold border border-emerald-300";
+          }
+
+          // Render citation sources if available
+          const attributions = candidate.groundingMetadata?.groundingAttributions;
+          if (attributions && attributions.length > 0 && sourcesList && sourcesContainer) {
+            sourcesList.innerHTML = attributions.map(att => {
+              if (att.web?.uri && att.web?.title) {
+                return `<a href="${att.web.uri}" target="_blank" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-sky-400 rounded text-[10px] font-mono inline-block truncate max-w-[200px] border border-slate-700"><i class="fa-solid fa-link text-[9px] mr-1"></i>${att.web.title}</a>`;
+              }
+              return '';
+            }).join('');
+            sourcesContainer.classList.remove('hidden');
+          }
+
+          // Smart auto-update card values from AI response text regex matchers
+          updateUiCardsFromAiText(text);
+        } else {
+          responseText.innerText = "No response content received from Gemini AI.";
+        }
       } catch (err) {
-        responseText.innerText = `Gemini AI Copilot Error: ${err.message}`;
+        responseText.innerText = `Gemini AI Query Failed:\n${err.message}\n\nPlease verify your API key by clicking the 'API Key' button in the top bar.`;
+      }
+    }
+
+    function updateUiCardsFromAiText(text) {
+      if (!text) return;
+      const lower = text.toLowerCase();
+
+      // Checked pieces parsing (e.g., "piece limit: 2 bags", "2 pieces", "2 bags", "1 piece")
+      const pcMatch = lower.match(/(?:piece limit|checked baggage|pieces|bags? included|allowance)\D*(\d+)\s*(?:piece|pcs|bag)/) || lower.match(/(\d+)\s*(?:piece|pcs|bag|checked bag)/);
+      if (pcMatch && pcMatch[1]) {
+        const pcs = parseInt(pcMatch[1], 10);
+        if (pcs >= 0 && pcs <= 5) {
+          const elPcs = document.getElementById('res-checked-pcs');
+          if (elPcs) elPcs.innerText = `${pcs} Piece${pcs !== 1 ? 's' : ''}`;
+          
+          const passChecked = document.getElementById('pass-checked-val');
+          const elKgEach = document.getElementById('res-checked-weight-each')?.innerText || "23.0 KG";
+          const kgValue = parseFloat(elKgEach) || 23;
+          const totalKg = pcs * kgValue;
+          
+          const totalStr = currentUnitSystem === 'metric' ? `${totalKg.toFixed(1)} KG Total` : `${(totalKg * 2.20462).toFixed(1)} LBS Total`;
+          const elCheckedWtTotal = document.getElementById('res-checked-weight-total');
+          if (elCheckedWtTotal) elCheckedWtTotal.innerText = totalStr;
+
+          if (passChecked) passChecked.innerText = `${pcs} PC × ${elKgEach} (${totalStr})`;
+        }
+      }
+
+      // Checked weight per piece parsing (e.g., "23 kg", "32 kg", "50 lbs")
+      const kgMatch = lower.match(/(?:max weight per bag|max weight|weight limit)\D*(\d{2})\s*(?:kg|kilos|lb|lbs)/) || lower.match(/(\d{2})\s*(?:kg|kilos)/);
+      if (kgMatch && kgMatch[1]) {
+        const kg = parseInt(kgMatch[1], 10);
+        if (kg >= 7 && kg <= 50) {
+          const weightStr = currentUnitSystem === 'metric' ? `${kg.toFixed(1)} KG each` : `${(kg * 2.20462).toFixed(1)} LBS each`;
+          const elKg = document.getElementById('res-checked-weight-each');
+          if (elKg) elKg.innerText = weightStr;
+        }
       }
     }
   </script>
